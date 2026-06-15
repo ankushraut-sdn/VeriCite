@@ -1,0 +1,31 @@
+services:
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: vericite-backend
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./backend:/backend
+      - vericite-data:/backend/data
+    environment:
+      - PORT=8080
+      - HOST=0.0.0.0
+      - CHROMA_DB_PATH=/backend/data/chroma_db
+      - PYTHONPATH=/
+    restart: always
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: vericite-frontend
+    ports:
+      - "3000:80"
+    depends_on:
+      - backend
+    restart: always
+
+volumes:
+  vericite-data:

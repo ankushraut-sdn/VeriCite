@@ -1,0 +1,43 @@
+# Virtual Environments
+venv/
+.venv/
+env/
+.env/
+
+# Environment Variables & Secrets
+.env
+.env.*
+!.env.example
+
+# Python Cache & Builds
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.pytest_cache/
+.mypy_cache/
+.ipynb_checkpoints/
+build/
+dist/
+*.egg-info/
+
+# Node.js Dependencies & Builds
+node_modules/
+frontend/node_modules/
+frontend/dist/
+frontend/build/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.eslintcache
+
+# Local Database & Uploaded Corpus (Do not commit actual files or vector databases)
+backend/data/
+data/
+db/
+*.db
+*.sqlite3
+
+# Operating System Files
+.DS_Store
+Thumbs.db
