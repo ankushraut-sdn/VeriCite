@@ -3,8 +3,6 @@
 ## 1. Project Overview
 
 **Project Name:** VeriCite
-**Project Type:** Full Stack (FastAPI backend + React frontend + MCP server)
-**Status:** Development
 
 ### Description
 
