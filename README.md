@@ -1,91 +1,156 @@
-# VeriCite: Fact-Checking & Citation-Attributed RAG System
+# VeriCite
 
-A robust, production-grade, zero-dependency-overhead Document-Based RAG System named **VeriCite** built from scratch in Python. It includes a page-aware markdown preprocessing and ingestion pipeline, semantic vector databases integration (local ChromaDB), multi-format parsers (PDF, DOCX, TXT, MD), dynamic similarity filters, OpenAI GPT-4o LLM integration with complete attribution, and a breathtaking, high-fidelity responsive dark-mode Single Page Web Application!
+## 1. Project Overview
 
----
+**Project Name:** VeriCite
+**Project Type:** Full Stack (FastAPI backend + React frontend + MCP server)
+**Status:** Development
 
-## 🌌 Key Highlights & Features
+### Description
 
-1. **Intelligent Multi-Format Ingestion Pipeline**
-   - Page-boundary preserving parsing of **PDF**, **DOCX**, **TXT**, and **Markdown** files.
-   - Restores layout and styles, converting all text directly into uniform Markdown.
-   - Encodes specific `<!-- PAGE: X -->` markers into the document stream for exact citation tracking.
+VeriCite is a document-based RAG (retrieval-augmented generation) system built from scratch in Python for fact-checking and citation-attributed question answering. It ingests PDF, DOCX, TXT, and Markdown documents through a page-aware preprocessing pipeline, stores embeddings in a local ChromaDB vector store, and uses an LLM to synthesize answers with inline citations (`[Source: document.pdf, page X]`) pointing back to the exact source page. It includes a FastAPI backend, a dependency-free React/Vite frontend, an MCP server for AI assistant integration, and Docker Compose orchestration.
 
-2. **Semantic Text Chunking**
-   - Employs a recursive text-splitter with chunk size and overlap limits.
-   - Highly accurate, page-aware block segmentation.
-   - Complete metadata enrichment (filename, page offsets, timestamp index, size details).
+## 2. Core Features
 
-3. **Hybrid Embeddings & Local Fallbacks**
-   - Default integration with OpenAI's premium `text-embedding-3-small` model.
-   - Automatic local offline fallback utilizing a **deterministic word-level hashing vectorizer** scaled to 1536 dimensions. This enables zero-key local testing that actually maintains basic semantic query matching!
+- Multi-format ingestion pipeline: page-boundary-preserving parsing of PDF, DOCX, TXT, and Markdown into uniform Markdown with embedded page markers for citation tracking.
+- Semantic chunking: recursive, page-aware text splitting with configurable chunk size/overlap and metadata enrichment (filename, page offsets, timestamps).
+- Hybrid embeddings: uses OpenAI's `text-embedding-3-small` by default. When no `OPENAI_API_KEY` is set, it automatically falls back to a deterministic word-hashing vectorizer (1536 dimensions) so the system is usable offline without any API key.
+- Persistent vector storage via local ChromaDB, with cosine similarity search and automatic cleanup of stale records on re-upload.
+- LLM citation orchestration: prompts GPT-4o to answer strictly from retrieved context with enforced bracketed citations. When no `OPENAI_API_KEY` is set, falls back to a rule-based mock summarization engine instead of a real LLM call, so the system is fully testable without credentials.
+- Dependency-free dark-mode SPA frontend with drag-and-drop upload, clickable citations that scroll to and highlight the source fragment.
+- MCP (Model Context Protocol) server exposing `query_rag`, `list_documents`, `ingest_document`, and `delete_document` tools for integration with Claude Desktop, Cursor, or other MCP-aware clients.
 
-4. **Self-Contained Persistent Vector Storage**
-   - High-performance cosine similarity searches powered by an embedded local ChromaDB instance.
-   - Self-cleaning index layers: automatically purges old records when re-uploading documents.
+## 3. Tech Stack
 
-5. **LLM Citation Orchestration**
-   - Direct prompt inject layer ensuring the LLM synthesizes structured markdown answers using *only* the retrieved context blocks.
-   - Enforces bracketed inline citations: `[Source: document.pdf, page X]`.
-   - Incorporates a **highly detailed mock summarization engine** when running without OpenAI keys, making it 100% testable out of the box.
+| Component | Technology |
+|---|---|
+| Backend | Python, FastAPI |
+| Vector store | ChromaDB (local, persistent) |
+| LLM / Embeddings | OpenAI API (embeddings + GPT-4o), with an offline mock fallback for both |
+| Frontend | React (via Vite), plain CSS, no external UI framework |
+| Integration | MCP SDK (Model Context Protocol server) |
+| Deployment | Docker, Docker Compose, Nginx (frontend container) |
+| Testing | pytest |
 
-6. **Breathtaking Dark-Mode SPA Console**
-   - Self-contained, zero-npm-dependency frontend using Google Fonts, premium animated iconography, glassmorphic layouts, and floating ambient glow spheres.
-   - Features dynamic upload drag-and-drop slots with visual progress bars.
-   - Contains an interactive conversation box: **citations are clickable**, scrolling/highlighting corresponding document fragments instantly!
-
----
-
-## 📂 Directory Layout
+## 4. Project Structure
 
 ```
 VeriCite/
-├─ backend/
-│   ├─ src/
-│   │   ├─ loaders/             # multi-format loaders (base, pdf, docx, txt, md)
-│   │   ├─ chunker/             # recursive page-aware segmentation
-│   │   ├─ embedder/            # OpenAI & deterministically hashed mock embedder
-│   │   ├─ vectordb/            # local persistent ChromaDB wrapper
-│   │   ├─ retriever/           # similarity filter searches
-│   │   ├─ llm/                 # GPT prompt layout & offline mock engines
-│   │   ├─ config.py            # env loads (.env support)
-│   │   ├─ exceptions.py        # unified custom exceptions
-│   │   ├─ orchestrator.py      # pipeline flow glue
-│   │   └─ api.py               # REST API endpoints (FastAPI)
-│   ├─ scripts/
-│   │   └─ demo.py              # interactive CLI demo
-│   └─ requirements.txt         # backend package registry
-├─ frontend/
-│   ├─ src/
-│   │   ├─ components/          # modular React components (Uploader, List, Console)
-│   │   ├─ App.jsx              # central coordinate state orchestrator
-│   │   └─ index.css            # premium responsive CSS design
-│   ├─ index.html               # main Vite mount page
-│   ├─ package.json             # frontend dependencies config
-│   ├─ vite.config.js           # Vite development server settings
-│   └─ Dockerfile               # multi-stage builder & Nginx serving container
-├─ docker-compose.yml           # multi-container docker orchestration
-└─ README.md                    # system handbook
+├── backend/
+│   ├── src/
+│   │   ├── loaders/       # multi-format loaders (pdf, docx, txt, md)
+│   │   ├── chunker/        # recursive page-aware segmentation
+│   │   ├── embedder/       # OpenAI embedder + offline hashing fallback
+│   │   ├── vectordb/       # ChromaDB wrapper
+│   │   ├── retriever/      # similarity search
+│   │   ├── llm/            # GPT prompt layer + offline mock engine
+│   │   ├── orchestrator.py # pipeline glue
+│   │   ├── api.py          # FastAPI REST endpoints
+│   │   └── mcp_server.py   # MCP server exposing RAG tools
+│   ├── scripts/demo.py     # interactive CLI demo
+│   ├── tests/test_vericite.py
+│   └── requirements.txt
+├── frontend/
+│   ├── src/                # React components, App.jsx, index.css
+│   ├── index.html
+│   ├── package.json
+│   └── Dockerfile
+└── docker-compose.yml
 ```
 
----
+## 5. Prerequisites
 
-## 🛠️ Quick Start & Setup
+- Python 3.x with `venv`
+- Node/npm only needed if rebuilding the frontend (it otherwise runs as static files)
+- Docker and Docker Compose (optional, for containerized run)
+- An OpenAI API key (optional — the system runs fully offline with mock embeddings/LLM if omitted)
 
-### Option 1: Quick Start Local Installation
+## 6. How to Run
 
-#### 1. Setup Virtual Environment & Install Dependencies
-First, set up your Python 3 environment in your workspace terminal:
+### Local development
+
+Set up the backend environment:
+
 ```bash
-cd /home/ankushraut/DayUsers/ankushraut/Official/Projects/GIT/VeriCite
+cd VeriCite
 python3 -m venv venv
 source venv/bin/activate
 pip install --upgrade pip
 pip install -r backend/requirements.txt
 ```
 
-#### 2. Configure Environment variables
-Create a `.env` file under the `/home/ankushraut/DayUsers/ankushraut/Official/Projects/GIT/VeriCite/backend/` directory:
+Create a `.env` file under `backend/` (see [Environment Variables](#8-environment-variables) below). If `OPENAI_API_KEY` is omitted, the system runs entirely offline using the mock embedder and mock summarization engine described above.
+
+Run the interactive CLI demo (ingests a sample document, queries it, prints cited answers):
+
+```bash
+python backend/scripts/demo.py
+# or against your own file:
+python backend/scripts/demo.py --file /path/to/your/document.pdf --query "Summarize the conclusion."
+```
+
+Start the API server:
+
+```bash
+python -m uvicorn backend.src.api:app --reload --host 0.0.0.0 --port 8080
+```
+
+Check health at `http://localhost:8080/api/health`.
+
+Serve the frontend (no build step required):
+
+```bash
+cd frontend
+python3 -m http.server 3000
+```
+
+Open `http://localhost:3000`.
+
+### Docker
+
+```bash
+docker compose up --build
+```
+
+This starts the FastAPI backend on `http://localhost:8080` and the frontend on `http://localhost:3000`.
+
+### MCP server
+
+```bash
+source venv/bin/activate
+pip install -r backend/requirements.txt
+python -m backend.src.mcp_server
+```
+
+To connect from Claude Desktop, add an entry under `mcpServers` in the Claude Desktop config file (`~/.config/Claude/claude_desktop_config.json` on Linux, `~/Library/Application Support/Claude/claude_desktop_config.json` on macOS, `%APPDATA%\Claude\claude_desktop_config.json` on Windows):
+
+```json
+{
+  "mcpServers": {
+    "local-document-vericite": {
+      "command": "/path/to/VeriCite/venv/bin/python",
+      "args": ["-m", "backend.src.mcp_server"],
+      "env": {
+        "OPENAI_API_KEY": "YOUR_OPENAI_API_KEY_HERE",
+        "CHROMA_DB_PATH": "/path/to/VeriCite/backend/data/chroma_db"
+      }
+    }
+  }
+}
+```
+
+## 7. API Documentation
+
+| Method | Endpoint | Description |
+|---|---|---|
+| GET | `/api/health` | Health check |
+| POST | `/api/upload` | Ingest a document (PDF/DOCX/TXT/MD) |
+| POST | `/api/query` | Ask a question; returns an answer with inline source citations |
+| GET | `/api/documents` | List ingested documents |
+| DELETE | `/api/documents/{filename}` | Remove a document and its vectors |
+
+## 8. Environment Variables
+
 ```env
 OPENAI_API_KEY=your_openai_api_key_here
 EMBEDDING_MODEL=text-embedding-3-small
@@ -95,117 +160,22 @@ LOG_LEVEL=INFO
 PORT=8080
 HOST=0.0.0.0
 ```
-*Note: If no `OPENAI_API_KEY` is supplied, the system automatically falls back to offline mock mode for both embeddings and LLM responses, allowing you to try the system instantly!*
 
-#### 3. Run the End-to-End CLI Demo
-Execute the demo script. It automatically generates a sample document in `./data/vericite_spec.md`, ingests it into the Chroma DB instance, queries it, prints the cited answers, matches attributed sources, and displays total execution metrics:
-```bash
-python backend/scripts/demo.py
-```
+All variables are optional; without `OPENAI_API_KEY` the system substitutes the offline mock embedder and mock summarization engine noted in Core Features.
 
-To run it on a specific document with your own custom query:
-```bash
-python backend/scripts/demo.py --file /path/to/your/document.pdf --query "Summarize the conclusion."
-```
+## 9. Testing
 
-#### 4. Spin Up the FastAPI Web API Server
-To start the REST API server:
-```bash
-python -m uvicorn backend.src.api:app --reload --host 0.0.0.0 --port 8080
-```
-Confirm the API is online by navigating to: `http://localhost:8080/api/health`
-
-#### 5. Launch the Front-End Console
-Since the front-end has **zero build dependencies**, you can run it immediately!
-Simply open `frontend/index.html` in your web browser, or serve it using any lightweight server:
-```bash
-# Using python HTTP server
-cd frontend
-python3 -m http.server 3000
-```
-Open `http://localhost:3000` to interact with the premium QA Console!
-
----
-
-## 🐳 Option 2: Docker Compose Orchestration
-
-A multi-stage `docker-compose.yml` has been included in the root directory, enabling you to build and spin up the complete application stack (Backend API + Front-End HTTP Server) with a single command!
-
-### Start the Services
-```bash
-docker compose up --build
-```
-This boots up:
-- The FastAPI API server listening at `http://localhost:8080`.
-- The premium Front-End QA Web Console listening at `http://localhost:3000`.
-
----
-
-## 🧪 Automated Testing
-
-A complete suite of modular testing scripts is located in `backend/tests/` verifying loaders, custom metadata tracking, chunking behaviors, vector stores, and unified orchestration.
-To execute all test configurations:
 ```bash
 pytest backend/
 ```
 
----
+Tests live in `backend/tests/test_vericite.py`.
 
-## 🤖 Model Context Protocol (MCP) Server Integration
+## 10. Known Limitations
 
-This repository includes a native, production-grade **Model Context Protocol (MCP)** server built on top of the VeriCite system core. The MCP server allows AI models and assistant clients (such as **Claude Desktop**, **Cursor**, or autonomous agents) to directly interact with your local document index as a semantic search and ingestion tool.
+- Without an `OPENAI_API_KEY`, answers are generated by a rule-based mock summarizer, not a real LLM — useful for offline testing but not representative of production answer quality.
+- Vector storage is a local, file-based ChromaDB instance; there is no multi-user or distributed deployment story.
 
-### 🛠️ Exposed Tools
+## 11. License
 
-The MCP server exposes four rich tools to connected models:
-1. **`query_rag`**: Submit a semantic query to retrieve document contexts and get a citation-attributed synthesized answer from the local database.
-2. **`list_documents`**: Returns a list of all currently ingested and indexed source documents with file size and max page counts.
-3. **`ingest_document`**: Index a new local document file (PDF, TXT, DOCX, MD) on the fly, immediately adding its semantic embeddings to the database index.
-4. **`delete_document`**: Wipes all semantic vectors and clean physical storage entries for a selected file.
-
-### 🚀 Setup & Launch Guide
-
-#### 1. Install local dependencies
-Ensure the local virtual environment has all necessary dependencies (including the newly added `mcp` SDK) installed:
-```bash
-# Activate your local virtual environment
-source venv/bin/activate
-pip install -r backend/requirements.txt
-```
-
-#### 2. Run the MCP Server locally
-The MCP server uses the high-performance **Stdio** transport layer. You can launch it with:
-```bash
-python -m backend.src.mcp_server
-```
-
-#### 3. Integrate with Claude Desktop
-To expose these local document search capabilities to your Claude Desktop client, add the following configuration block under `mcpServers` in your Claude configuration file:
-
-* **File Path (Linux/Ubuntu):** `~/.config/Claude/claude_desktop_config.json`
-* **File Path (macOS):** `~/Library/Application Support/Claude/claude_desktop_config.json`
-* **File Path (Windows):** `%APPDATA%\Claude\claude_desktop_config.json`
-
-```json
-{
-  "mcpServers": {
-    "local-document-vericite": {
-      "command": "/home/ankushraut/DayUsers/ankushraut/Official/Projects/GIT/VeriCite/venv/bin/python",
-      "args": [
-        "-m",
-        "backend.src.mcp_server"
-      ],
-      "env": {
-        "OPENAI_API_KEY": "YOUR_OPENAI_API_KEY_HERE",
-        "CHROMA_DB_PATH": "/home/ankushraut/DayUsers/ankushraut/Official/Projects/GIT/VeriCite/backend/data/chroma_db"
-      }
-    }
-  }
-}
-```
-
-Restart Claude Desktop, and you will see a new 🔌 plug icon! You can now ask Claude questions like:
-* *"Search my local document VeriCite index for..."*
-* *"What documents are currently ingested in my local database?"*
-* *"Please index the text document at `/path/to/notes.txt`"*
-
+No `LICENSE` file is present in this repository.
